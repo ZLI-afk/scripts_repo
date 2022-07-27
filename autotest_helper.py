@@ -3,26 +3,29 @@ import sys
 import shutil
 import pickle
 
-strategy_list = [
-     '01_2_g100_v10_c10',
-     '01_2_g20_v10_c10',
-     '01_2_g50_v10_c10',
-     '01_3_g100_v10_c10',
-     '01_3_g20_v10_c10',
-     '01_3_g50_v10_c10'
+strategy_list_str = [
+    '01_2_g100_v10_c10',
+    '01_2_g20_v10_c10',
+    '01_2_g50_v10_c10',
+    '01_3_g100_v10_c10',
+    '01_3_g20_v10_c10',
+    '01_3_g50_v10_c10'
 ]
 
-def save_v(v,filename):
+
+def save_v(v, filename):
     if os.path.isfile(filename):
         print(f'{filename} already exist, removing it...')
         os.remove(filename)
     with open(filename, 'wb') as f:
         pickle.dump(v, f)
 
+
 def load_v(filename):
     with open(filename, 'rb') as f:
         r = pickle.load(f)
     return r
+
 
 def check_input():
     if not all([os.path.isfile('param_relax.json'),
@@ -40,12 +43,14 @@ def check_input():
     else:
         return
 
+
 def return_all_strategy():
     strategy_list = []
     for ii in os.listdir():
-        if os.path.isdir(ii):
+        if os.path.isdir(ii) and os.path.islink(ii):
             strategy_list.append(ii)
     return strategy_list
+
 
 def dump_job_relax(job_name):
     job_relax = [
@@ -79,6 +84,7 @@ def dump_job_relax(job_name):
     with open('job_relax', 'w') as f:
         for ii in range(len(job_relax)):
             f.write(job_relax[ii])
+
 
 def dump_job_prop(job_name, structs, props):
     job_prop = [
@@ -121,20 +127,21 @@ def dump_job_prop(job_name, structs, props):
         for ii in range(len(job_prop)):
             f.write(job_prop[ii])
 
+
 def make_init_dirs(strategy_list,
                    param_relax, param_prop,
                    poscar_bcc, poscar_fcc):
     cwd = os.getcwd()
-    os.makedirs('autotests')
+    os.mkdir('autotests')
     main_path = os.path.join(cwd, 'autotests')
     main_path_abs = os.path.abspath(main_path)
     os.chdir(main_path_abs)
 
     orig_strategy_list_abs = []
-    strategy_list_abs =[]
+    strategy_list_abs = []
     model_list_abs = []
     for ii in strategy_list:
-        os.makedirs(ii)
+        os.mkdir(ii)
         orig_strategy_abs = os.path.abspath(f'../{ii}')
         orig_strategy_list_abs.append(orig_strategy_abs)
         os.chdir(ii)
@@ -143,7 +150,7 @@ def make_init_dirs(strategy_list,
         dump_job_relax(ii)
 
         for jj in ['000', '001', '002', '003']:
-            os.makedirs(jj)
+            os.mkdir(jj)
             os.chdir(jj)
             cur_model_path = os.path.abspath(os.getcwd())
             model_list_abs.append(cur_model_path)
@@ -152,14 +159,14 @@ def make_init_dirs(strategy_list,
             os.symlink(param_prop, './param_prop.json')
             orig_model_path = os.path.join(orig_strategy_abs, jj)
             os.symlink(os.path.join(orig_model_path, 'frozen_model.pb'), './frozen_model.pb')
-            os.makedirs('confs')
+            os.mkdir('confs')
             os.chdir('confs')
             confs = os.getcwd()
             os.makedirs('std-bcc')
             os.chdir('std-bcc')
             os.symlink(poscar_bcc, './POSCAR')
             os.chdir(confs)
-            os.makedirs('std-fcc')
+            os.mkdir('std-fcc')
             os.chdir('std-fcc')
             os.symlink(poscar_fcc, './POSCAR')
             os.chdir(cur_strategy)
@@ -167,11 +174,13 @@ def make_init_dirs(strategy_list,
         os.chdir(main_path_abs)
     return strategy_list_abs, model_list_abs
 
+
 def make_relax(model_list):
     for ii in model_list:
         os.chdir(ii)
         print(f'working on direction: {ii}')
         os.system('dpgen autotest make param_relax.json')
+
 
 def make_prop(model_list):
     for ii in model_list:
@@ -179,11 +188,13 @@ def make_prop(model_list):
         print(f'working on direction: {ii}')
         os.system('dpgen autotest make param_prop.json')
 
+
 def run_relax(strategy_list):
     for ii in strategy_list:
         os.chdir(ii)
         print(f'working on direction: {ii}')
         os.system('sbatch job_relax')
+
 
 def run_prop(strategy_list, structs, props):
     for ii in strategy_list:
@@ -193,17 +204,20 @@ def run_prop(strategy_list, structs, props):
         dump_job_prop(job_name, structs, props)
         os.system('sbatch job_prop')
 
+
 def post_relax(model_list):
     for ii in model_list:
         os.chdir(ii)
         print(f'working on direction: {ii}')
         os.system('dpgen autotest post param_relax.json')
 
+
 def post_prop(model_list):
     for ii in model_list:
         os.chdir(ii)
         print(f'working on direction: {ii}')
         os.system('dpgen autotest post param_prop.json')
+
 
 def main(param_relax, param_prop,
          poscar_bcc, poscar_fcc,
@@ -219,11 +233,12 @@ def main(param_relax, param_prop,
             else:
                 print('will exit')
                 exit()
-        if sys.argv[2] == 'all':
+        get_strategy = input('run all potential listed in current direction? (y/n): ')
+        if sys.argv[2] == 'y':
             strategy_list_str = return_all_strategy()
         strategy_list, model_list = make_init_dirs(strategy_list_str,
-                                                    param_relax, param_prop,
-                                                    poscar_bcc, poscar_fcc)
+                                                   param_relax, param_prop,
+                                                   poscar_bcc, poscar_fcc)
         save_v(strategy_list, 'strategy_list')
         save_v(model_list, 'model_list')
         print('-<< finished! >>-')
@@ -231,7 +246,6 @@ def main(param_relax, param_prop,
     elif sys.argv[1] == 'make_relax':
         print('->> start make_relax step <<-')
         try:
-            strategy_list = load_v(strategy_list_path)
             model_list = load_v(model_list_path)
         except:
             print('run make_relax first!\nwill exit!')
@@ -244,7 +258,6 @@ def main(param_relax, param_prop,
         print('->> start run_relax step <<-')
         try:
             strategy_list = load_v(strategy_list_path)
-            model_list = load_v(model_list_path)
         except:
             print('run make_relax first!\nwill exit!')
             exit()
@@ -255,7 +268,6 @@ def main(param_relax, param_prop,
     elif sys.argv[1] == 'post_relax':
         print('->> start post_relax step <<-')
         try:
-            strategy_list = load_v(strategy_list_path)
             model_list = load_v(model_list_path)
         except:
             print('run make_relax first!\nwill exit!')
@@ -267,7 +279,6 @@ def main(param_relax, param_prop,
     elif sys.argv[1] == 'make_prop':
         print('->> start make_prop step <<-')
         try:
-            strategy_list = load_v(strategy_list_path)
             model_list = load_v(model_list_path)
         except:
             print('run make_prop first!\nwill exit!')
@@ -280,24 +291,24 @@ def main(param_relax, param_prop,
         print('->> start run_prop step <<-')
         try:
             strategy_list = load_v(strategy_list_path)
-            model_list = load_v(model_list_path)
         except:
             print('run make_prop first!\nwill exit!')
             exit()
         else:
-            if sys.argv[3] == 'all':
+            get_prop = input('please indicate property list to run: ')
+            if get_prop == 'all':
                 props = '{elastic_00,eos_00,surface_00,vacancy_00,interstitial_00,gamma_00}'
             else:
-                props = sys.argv[3]
+                props = get_prop
+            get_struct = input('please indicate configure type to run: ')
             run_prop(strategy_list,
-                     structs=sys.argv[2],
+                     structs=get_struct,
                      props=props)
             print('-<< finished! >>-')
 
     elif sys.argv[1] == 'post_prop':
         print('->> start post_prop step <<-')
         try:
-            strategy_list = load_v(strategy_list_path)
             model_list = load_v(model_list_path)
         except:
             print('run make_relax first!\nwill exit!')
@@ -309,12 +320,12 @@ def main(param_relax, param_prop,
     else:
         print('!!wrong input argv!\n' +
               '!!only support:\n' +
-              '     make_file:\n' +
-              '     make_relax:\n' +
-              '     run_relax:\n' +
-              '     post_relax:\n' +
-              '     make_prop:\n' +
-              '     run_prop:\n' +
+              '     make_file\n' +
+              '     make_relax\n' +
+              '     run_relax\n' +
+              '     post_relax\n' +
+              '     make_prop\n' +
+              '     run_prop\n' +
               '     post_prop\n' +
               '!!please input in order')
 
