@@ -234,7 +234,7 @@ def main(param_relax, param_prop,
                 print('will exit')
                 exit()
         get_strategy = input('run all potential listed in current direction? (y/n): ')
-        if sys.argv[2] == 'y':
+        if get_strategy == 'y':
             strategy_list_str = return_all_strategy()
         strategy_list, model_list = make_init_dirs(strategy_list_str,
                                                    param_relax, param_prop,
