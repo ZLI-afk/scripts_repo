@@ -2,6 +2,7 @@ import os
 import sys
 import shutil
 import pickle
+import glob
 from multiprocessing import Pool
 
 strategy_list_str = [
@@ -151,12 +152,14 @@ def make_init_dirs(strategy_list,
         os.mkdir(ii)
         orig_strategy_abs = os.path.abspath(f'../{ii}')
         orig_strategy_list_abs.append(orig_strategy_abs)
+        orig_models = glob.glob(os.path.join(orig_strategy_abs, '00?'))
+        models = [model.split('/')[-1] for model in orig_models]
+        models.sort()
         os.chdir(ii)
         cur_strategy = os.path.abspath(os.getcwd())
         strategy_list_abs.append(cur_strategy)
         dump_job_relax(ii)
-
-        for jj in ['000', '001', '002', '003']:
+        for jj in models:
             os.mkdir(jj)
             os.chdir(jj)
             cur_model_path = os.path.abspath(os.getcwd())
@@ -224,7 +227,7 @@ def main(param_relax, param_prop,
             else:
                 print('will exit')
                 exit()
-        get_strategy = input('run all potential listed in current direction? (y/n): ')
+        get_strategy = input('test all potential listed in current direction? (y/n): ')
         if get_strategy == 'y':
             strategy_list_str = return_all_strategy()
         strategy_list, model_list = make_init_dirs(strategy_list_str,
