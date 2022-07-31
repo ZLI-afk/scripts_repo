@@ -2,6 +2,7 @@ import os
 import sys
 import shutil
 import pickle
+from multiprocessing import Pool
 
 strategy_list_str = [
     '01_2_g100_v10_c10',
@@ -128,6 +129,12 @@ def dump_job_prop(job_name, structs, props):
             f.write(job_prop[ii])
 
 
+def apply_parallel(model, cmd):
+    os.chdir(model)
+    print(f'working on direction: {model}')
+    os.system(cmd)
+
+
 def make_init_dirs(strategy_list,
                    param_relax, param_prop,
                    poscar_bcc, poscar_fcc):
@@ -175,19 +182,16 @@ def make_init_dirs(strategy_list,
     return strategy_list_abs, model_list_abs
 
 
-def make_relax(model_list):
-    for ii in model_list:
-        os.chdir(ii)
-        print(f'working on direction: {ii}')
-        os.system('dpgen autotest make param_relax.json')
-
-
-def make_prop(model_list):
-    for ii in model_list:
-        os.chdir(ii)
-        print(f'working on direction: {ii}')
-        os.system('dpgen autotest make param_prop.json')
-
+def run_dpgen(model_list, indication):
+    processes = len(model_list)
+    pool = Pool(processes=processes)
+    step, type = indication.split('_')
+    print("Running dpgen via %d processes" % processes)
+    for model in model_list:
+        res = pool.apply_async(apply_parallel,
+                               (model, f'dpgen autotest {step} param_{type}.json'))
+    pool.close()
+    pool.join()
 
 def run_relax(strategy_list):
     for ii in strategy_list:
@@ -203,21 +207,6 @@ def run_prop(strategy_list, structs, props):
         print(f'working on direction: {ii}')
         dump_job_prop(job_name, structs, props)
         os.system('sbatch job_prop')
-
-
-def post_relax(model_list):
-    for ii in model_list:
-        os.chdir(ii)
-        print(f'working on direction: {ii}')
-        os.system('dpgen autotest post param_relax.json')
-
-
-def post_prop(model_list):
-    for ii in model_list:
-        os.chdir(ii)
-        print(f'working on direction: {ii}')
-        os.system('dpgen autotest post param_prop.json')
-
 
 def main(param_relax, param_prop,
          poscar_bcc, poscar_fcc,
@@ -243,15 +232,17 @@ def main(param_relax, param_prop,
         save_v(model_list, 'model_list')
         print('-<< finished! >>-')
 
-    elif sys.argv[1] == 'make_relax':
-        print('->> start make_relax step <<-')
+    elif sys.argv[1] in ['make_relax', 'make_prop',
+                         'post_relax', 'post_prop']:
+        indication = sys.argv[1]
+        print(f'->> start {indication} step <<-')
         try:
             model_list = load_v(model_list_path)
         except:
-            print('run make_relax first!\nwill exit!')
+            print('run make_file first!\nwill exit!')
             exit()
         else:
-            make_relax(model_list)
+            run_dpgen(model_list, indication)
             print('-<< finished! >>-')
 
     elif sys.argv[1] == 'run_relax':
@@ -259,32 +250,10 @@ def main(param_relax, param_prop,
         try:
             strategy_list = load_v(strategy_list_path)
         except:
-            print('run make_relax first!\nwill exit!')
+            print('run make_file first!\nwill exit!')
             exit()
         else:
             run_relax(strategy_list)
-            print('-<< finished! >>-')
-
-    elif sys.argv[1] == 'post_relax':
-        print('->> start post_relax step <<-')
-        try:
-            model_list = load_v(model_list_path)
-        except:
-            print('run make_relax first!\nwill exit!')
-            exit()
-        else:
-            post_relax(model_list)
-            print('-<< finished! >>-')
-
-    elif sys.argv[1] == 'make_prop':
-        print('->> start make_prop step <<-')
-        try:
-            model_list = load_v(model_list_path)
-        except:
-            print('run make_prop first!\nwill exit!')
-            exit()
-        else:
-            make_prop(model_list)
             print('-<< finished! >>-')
 
     elif sys.argv[1] == 'run_prop':
@@ -292,7 +261,7 @@ def main(param_relax, param_prop,
         try:
             strategy_list = load_v(strategy_list_path)
         except:
-            print('run make_prop first!\nwill exit!')
+            print('run make_file first!\nwill exit!')
             exit()
         else:
             get_prop = input('please indicate property list to run: ')
@@ -304,17 +273,6 @@ def main(param_relax, param_prop,
             run_prop(strategy_list,
                      structs=get_struct,
                      props=props)
-            print('-<< finished! >>-')
-
-    elif sys.argv[1] == 'post_prop':
-        print('->> start post_prop step <<-')
-        try:
-            model_list = load_v(model_list_path)
-        except:
-            print('run make_relax first!\nwill exit!')
-            exit()
-        else:
-            post_prop(model_list)
             print('-<< finished! >>-')
 
     else:
