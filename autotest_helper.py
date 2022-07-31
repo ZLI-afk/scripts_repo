@@ -193,6 +193,7 @@ def run_dpgen(model_list, indication):
     pool.close()
     pool.join()
 
+
 def run_relax(strategy_list):
     for ii in strategy_list:
         os.chdir(ii)
@@ -207,6 +208,7 @@ def run_prop(strategy_list, structs, props):
         print(f'working on direction: {ii}')
         dump_job_prop(job_name, structs, props)
         os.system('sbatch job_prop')
+
 
 def main(param_relax, param_prop,
          poscar_bcc, poscar_fcc,
