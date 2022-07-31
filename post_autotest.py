@@ -340,18 +340,14 @@ def gamma(strategy_list):
             result_orig = os.path.join(os.getcwd(), 'result.out')
             with open('./result.out', 'r') as f:
                 lines = f.readlines()
-                result = []
                 result_list = []
                 for line in lines[2:]:
-                    data_list = line.split()[3:5]
-                    txt = ''
-                    data = []
-                    for string in data_list:
-                        data.append(float(string))
-                        txt += '\t' + string
-                    txt += '\n'
+                    data_dual = line.split()[3:5]
+                    x, y = data_dual
+                    data_list = [float(x), float(y)]
+                    txt = '\t' + x + '\t' + y + '\n'
                     result_txt.append(txt)
-                    result_list.append(data)
+                    result_list.append(data_list)
             result_table.append(np.array(result_list))
         # os.chdir(strategy)
         result_txt.append('\n')
@@ -431,11 +427,19 @@ if __name__ == '__main__':
         print('creating post path...')
         os.mkdir('post')
 
-    if sys.argv[2] == 'all':
-        props = ['relax', 'elastic', 'eos', 'surface',
-                 'vacancy', 'interstitial', 'gamma']
-    else:
-        props = [sys.argv[2]]
+    props = []
+    while True:
+        get_prop = input('please input property type for post:')
+
+        if get_prop == 'all':
+            props = ['relax', 'elastic', 'eos', 'surface',
+                     'vacancy', 'interstitial', 'gamma']
+            break
+        elif get_prop == 'end':
+            break
+        else:
+            props.append(get_prop)
+            print(f'recorded: {get_prop}')
 
     try:
         strategy_list = load_v('strategy_list')
