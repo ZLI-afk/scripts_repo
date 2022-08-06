@@ -230,6 +230,9 @@ def main(param_relax, param_prop,
         get_strategy = input('test all potential listed in current direction? (y/n): ')
         if get_strategy == 'y':
             strategy_list_str = return_all_strategy()
+        else:
+            print('will exit...')
+            exit()
         strategy_list, model_list = make_init_dirs(strategy_list_str,
                                                    param_relax, param_prop,
                                                    poscar_bcc, poscar_fcc)
