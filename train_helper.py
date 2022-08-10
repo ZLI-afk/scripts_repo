@@ -37,6 +37,7 @@ def make_dirs(strategies):
         print(f'working on {strategy}')
         os.chdir(strategy)
         cwd = os.getcwd()
+        os.symlink('/home/zhuoyli/labspace/long_train/Mo_dpdata', 'Mo_dpdata')
         input_json = glob.glob(os.path.join(cwd, 'input*.json'))
         input_param = loadfn(input_json[0])
         for i in range(ntasks):
