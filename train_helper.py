@@ -51,9 +51,13 @@ def make_dirs(strategies):
             print(model_name)
             model = os.path.join(cwd, model_name)
             os.chdir(model)
-            input_param["model"]["descriptor"]["seed"] = seeds[i]
-            input_param["model"]["fitting_net"]["seed"] = seeds[i]
-            input_param["training"]["seed"] = seeds[i]
+            if input_param["model"]["descriptor"]["type"] == "se_e2_a":
+                input_param["model"]["descriptor"]["seed"] = seeds[i]
+                input_param["model"]["fitting_net"]["seed"] = seeds[i]
+                input_param["training"]["seed"] = seeds[i]
+            elif input_param["model"]["descriptor"]["type"] == "hybrid":
+                input_param["model"]["descriptor"]["list"][0]["seed"] = seeds[i]
+                input_param["model"]["descriptor"]["list"][1]["seed"] = seeds[i]
             dump_job(model_name)
             with open(f'input_{model_name}.json', 'w') as f:
                 json.dump(input_param, f, indent=4)
