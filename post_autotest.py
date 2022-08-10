@@ -5,7 +5,6 @@ import shutil
 import glob
 import pickle
 import numpy as np
-import pandas as pd
 from monty.serialization import loadfn
 from scipy import interpolate
 from PIL import Image
@@ -22,10 +21,13 @@ sys.path.append(os.path.abspath(home_dir+'/template/python/src/util'))
 from constants import eVtoJ, kB, hP, NA
 from matplotlib.lines import Line2D
 
-conf = sys.argv[1]
+conf = input('please indicate the configure type to post: ')
 out_path = os.path.join(os.getcwd(), 'autotests/post')
 eos_benchmark = '/home/zhuoyli/benchmarks/Mo/eos/bcc_dft'
+cohesive_benchmark = '/home/zhuoyli/benchmarks/Mo/eos/cohesive_spin'
 gamma_benchmark = '/home/zhuoyli/benchmarks/Mo/gamma/110_14l'
+gammaA_benchmark = '/home/zhuoyli/benchmarks/Mo/gamma/112_20l'
+gammaB_benchmark = '/home/zhuoyli/benchmarks/Mo/gamma/123_20l'
 
 class PlotFig:
   def __init__(self):
@@ -56,7 +58,7 @@ class PlotFig:
         Spline = interpolate.make_interp_spline(x, y)
         y_m = Spline(x_m)
         if ii == 0:
-            ax.plot(x_m, y_m, color='black', linewidth=2,
+            ax.plot(x, y, color='black', linewidth=2,
                     zorder=1, label='DFT', alpha=0.8, marker=self.markers[ii],
                     ms=self.markers_size[ii], mec='black', mfc='white')
         else:
@@ -304,6 +306,44 @@ def eos(strategy_list):
             f.write(result_txt[ii])
 
 
+def cohesive(strategy_list):
+    print('->> posting cohesive results <<-')
+    result_txt = []
+    strategy_list.sort()
+    for strategy in strategy_list:
+        os.chdir(strategy)
+        strategy_name = strategy.split('/')[-1]
+        result_txt.append(strategy_name + '\n')
+        #result_txt.append('\tVpA(A^3)' + '\tEpA(eV)' + '\n')
+        result_table = []
+        benchmark = r = np.loadtxt(cohesive_benchmark, dtype=float)
+        result_table.append(benchmark)
+        models = glob.glob(os.path.join(strategy, '00?'))
+        models.sort()
+        for model in models:
+            print(f'working on {model}')
+            os.chdir(model)
+            os.chdir('confs')
+            os.chdir(conf)
+            os.chdir('cohesive_00')
+            result_orig = os.path.join(os.getcwd(), 'result.out')
+            r = np.loadtxt(result_orig, dtype=float, skiprows=2)
+            with open(result_orig, 'r') as f:
+                result = f.readlines()[1:]
+            for ii in range(len(result)):
+                result_txt.append(result[ii])
+            result_table.append(r)
+
+        #os.chdir(strategy)
+        result_txt.append('\n')
+        plot_cohesive(data=result_table, name=strategy_name)
+        #os.chdir(strategy)
+    out_file = os.path.join(out_path, 'cohesive.out')
+    print(f'writing to {out_file}...')
+    with open(out_file, 'w') as f:
+        for ii in range(len(result_txt)):
+            f.write(result_txt[ii])
+
 def plot_eos(data, name):
     os.chdir(out_path)
     if not os.path.isdir('eos_figures'):
@@ -316,8 +356,19 @@ def plot_eos(data, name):
             xlb=xlabel, ylb=ylabel, title=name)
 
 
-def gamma(strategy_list):
-    print('->> posting Gamma results <<-')
+def plot_cohesive(data, name):
+    os.chdir(out_path)
+    if not os.path.isdir('cohesive_figures'):
+        os.mkdir('cohesive_figures')
+    os.chdir('cohesive_figures')
+    pf = PlotFig()
+    xlabel = 'Cohesive energy Ec (Å$^{3}$)'
+    ylabel = 'Scaled lattice parameter a/a0'
+    pf.plot(data, pic_name=name, step=100,
+            xlb=xlabel, ylb=ylabel, title=name)
+
+def gamma(strategy_list, type):
+    print(f'->> posting {type} results <<-')
     result_txt = []
     strategy_list.sort()
     for strategy in strategy_list:
@@ -326,7 +377,7 @@ def gamma(strategy_list):
         result_txt.append(strategy_name + '\n')
         #result_txt.append('\tVpA(A^3)' + '\tEpA(eV)' + '\n')
         result_table = []
-        benchmark = r = np.loadtxt(gamma_benchmark, dtype=float)
+        benchmark = r = np.loadtxt(eval(f'{type}_benchmark'), dtype=float)
         result_table.append(benchmark)
         models = glob.glob(os.path.join(strategy, '00?'))
         models.sort()
@@ -335,7 +386,7 @@ def gamma(strategy_list):
             os.chdir(model)
             os.chdir('confs')
             os.chdir(conf)
-            os.chdir('gamma_00')
+            os.chdir(f'{type}_00')
             result_txt.append('\tDisp \tStacking_Fault_E(J/m^2)\n')
             result_orig = os.path.join(os.getcwd(), 'result.out')
             with open('./result.out', 'r') as f:
@@ -351,20 +402,20 @@ def gamma(strategy_list):
             result_table.append(np.array(result_list))
         # os.chdir(strategy)
         result_txt.append('\n')
-        plot_gamma(data=result_table, name=strategy_name)
+        plot_gamma(data=result_table, name=strategy_name, type=type)
         # os.chdir(strategy)
-    out_file = os.path.join(out_path, 'gamma.out')
+    out_file = os.path.join(out_path, f'{type}.out')
     print(f'writing to {out_file}...')
     with open(out_file, 'w') as f:
         for ii in range(len(result_txt)):
             f.write(result_txt[ii])
 
 
-def plot_gamma(data, name):
+def plot_gamma(data, name, type):
     os.chdir(out_path)
-    if not os.path.isdir('gamma_figures'):
-        os.mkdir('gamma_figures')
-    os.chdir('gamma_figures')
+    if not os.path.isdir(f'{type}_figures'):
+        os.mkdir(f'{type}_figures')
+    os.chdir(f'{type}_figures')
     pf = PlotFig()
     xlabel = 'Fault displacement along 1/2[111]'
     ylabel = 'Fault energy ${E}$ (J/m$^{2}$)'
@@ -386,8 +437,10 @@ def main(props, strategy_list):
             surface(strategy_list)
         elif prop == 'eos':
             eos(strategy_list)
-        elif prop == 'gamma':
-            gamma(strategy_list)
+        elif prop == 'cohesive':
+            cohesive(strategy_list)
+        elif prop in ['gamma', 'gammaA', 'gammaB']:
+            gamma(strategy_list, prop)
         else:
             print(f'error! input unsupported property type: {prop}')
             print('will exit...')
@@ -432,8 +485,8 @@ if __name__ == '__main__':
         get_prop = input('please input property type for post:')
 
         if get_prop == 'all':
-            props = ['relax', 'elastic', 'eos', 'surface',
-                     'vacancy', 'interstitial', 'gamma']
+            props = ['relax', 'elastic', 'eos', 'cohesive', 'surface',
+                     'vacancy', 'interstitial', 'gamma', 'gammaA', 'gammaB']
             break
         elif get_prop == 'end':
             break

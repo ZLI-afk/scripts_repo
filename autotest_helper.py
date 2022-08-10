@@ -15,7 +15,7 @@ strategy_list_str = [
 ]
 
 
-def save_v(v, filename):
+def save_v(v, filename) -> None:
     if os.path.isfile(filename):
         print(f'{filename} already exist, removing it...')
         os.remove(filename)
@@ -54,7 +54,7 @@ def return_all_strategy():
     return strategy_list
 
 
-def dump_job_relax(job_name):
+def dump_job_relax(job_name) -> None:
     job_relax = [
         '#!/usr/bin/env bash\n',
         '\n',
@@ -88,7 +88,7 @@ def dump_job_relax(job_name):
             f.write(job_relax[ii])
 
 
-def dump_job_prop(job_name, structs, props):
+def dump_job_prop(job_name, structs, props) -> None:
     job_prop = [
         '#!/usr/bin/env bash\n',
         '\n',
@@ -216,8 +216,8 @@ def run_prop(strategy_list, structs, props):
 def main(param_relax, param_prop,
          poscar_bcc, poscar_fcc,
          strategy_list_path, model_list_path):
-    if sys.argv[1] == 'make_file':
-        print('->> start make_file step <<-')
+    if sys.argv[1] == 'make_dirs':
+        print('->> start make_dirs step <<-')
         if os.path.exists('autotests'):
             print('autotests direction already exist...\n')
             is_rm = input('remove it?(y/n): ')
@@ -274,7 +274,8 @@ def main(param_relax, param_prop,
         else:
             get_prop = input('please indicate property list to run: ')
             if get_prop == 'all':
-                props = '{elastic_00,eos_00,surface_00,vacancy_00,interstitial_00,gamma_00}'
+                props = '{elastic_00,eos_00,cohesive_00,surface_00,' \
+                        'vacancy_00,interstitial_00,gamma_00,gammaA_00,gammaB_00}'
             else:
                 props = get_prop
             get_struct = input('please indicate configure type to run: ')
