@@ -39,6 +39,8 @@ def make_dirs(strategies):
         os.chdir(strategy)
         cwd = os.getcwd()
         train_set_name = train_sets.split('/')[-1]
+        if os.path.islink(train_set_name):
+            os.remove(train_set_name)
         os.symlink(train_sets, train_set_name)
         input_json = glob.glob(os.path.join(cwd, 'input*.json'))
         input_param = loadfn(input_json[0])
