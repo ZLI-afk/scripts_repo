@@ -7,6 +7,7 @@ from monty.serialization import loadfn, dumpfn
 
 ntasks = 4
 seeds = [10 ** (ii + 1) for ii in range(ntasks)]
+train_sets = '/home/zhuoyli/labspace/long_train/Mo_dpdata'
 
 def dump_job(job_name) -> None:
     job = [
@@ -37,7 +38,8 @@ def make_dirs(strategies):
         print(f'working on {strategy}')
         os.chdir(strategy)
         cwd = os.getcwd()
-        os.symlink('/home/zhuoyli/labspace/long_train/Mo_dpdata', 'Mo_dpdata')
+        train_set_name = train_sets.split('/')[-1]
+        os.symlink(train_sets, train_set_name)
         input_json = glob.glob(os.path.join(cwd, 'input*.json'))
         input_param = loadfn(input_json[0])
         for i in range(ntasks):
