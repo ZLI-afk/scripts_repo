@@ -82,7 +82,7 @@ def main(strategies):
 
 if __name__ == "__main__":
     cwd = os.getcwd()
-    cur_files = glob.glob(os.path.join(cwd, 'a*'))
+    cur_files = glob.glob(os.path.join(cwd, '*'))
     strategies = [ii for ii in cur_files if os.path.isdir(ii)]
     main(strategies)
     print('finished')
