@@ -69,7 +69,7 @@ def run(strategies):
 def main(strategies):
     if sys.argv[1] == 'make':
         make_dirs(strategies)
-    elif sys.argv[2] == 'run':
+    elif sys.argv[1] == 'run':
         run(strategies)
 
 
