@@ -45,7 +45,7 @@ class PlotFig:
     self.colors = plt.get_cmap('Dark2').colors
 
     self.markers = ['s','o','H','v','d']
-    self.markers_size = [5,6,6,6,6]
+    self.markers_size = [6,5,5,5,5]
 
   def plot(self, lines: np.ndarray, pic_name='my_plot',
            step=100, xlb='xlabel', ylb='ylabel', title=None):
