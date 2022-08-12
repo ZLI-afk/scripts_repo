@@ -58,13 +58,13 @@ class PlotFig:
         Spline = interpolate.make_interp_spline(x, y)
         y_m = Spline(x_m)
         if ii == 0:
-            ax.plot(x, y, color='black', linewidth=2, zorder=10,
-                    zorder=1, label='DFT', alpha=0.8, marker=self.markers[ii],
+            ax.plot(x, y, color='black', linewidth=2, zorder=100,
+                    label='DFT', alpha=0.8, marker=self.markers[ii],
                     ms=self.markers_size[ii], mec='black', mfc='white')
         else:
             ax.plot(x_m, y_m, color=self.colors[ii], linewidth=2, zorder=ii,
-                zorder=1, label=f'model_0{ii}', alpha=0.8, marker=self.markers[ii],
-                ms=self.markers_size[ii], mec=self.colors[ii], mfc='white')
+                    label=f'model_0{ii}', alpha=0.8, marker=self.markers[ii],
+                    ms=self.markers_size[ii], mec=self.colors[ii], mfc='white')
 
     ax.legend()
     if title:
