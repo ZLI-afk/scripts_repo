@@ -362,8 +362,8 @@ def plot_cohesive(data, name):
         os.mkdir('cohesive_figures')
     os.chdir('cohesive_figures')
     pf = PlotFig()
-    xlabel = 'Cohesive energy Ec (Å$^{3}$)'
-    ylabel = 'Scaled lattice parameter a/a0'
+    xlabel = 'Scaled lattice parameter a/a0'
+    ylabel = 'Cohesive energy Ec (eV/atom)'
     pf.plot(data, pic_name=name, step=100,
             xlb=xlabel, ylb=ylabel, title=name)
 
