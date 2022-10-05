@@ -247,7 +247,7 @@ def main(param_relax, param_prop,
         try:
             model_list = load_v(model_list_path)
         except:
-            print('run make_file first!\nwill exit!')
+            print('run make_dirs first!\nwill exit!')
             exit()
         else:
             run_dpgen(model_list, indication)
@@ -258,7 +258,7 @@ def main(param_relax, param_prop,
         try:
             strategy_list = load_v(strategy_list_path)
         except:
-            print('run make_file first!\nwill exit!')
+            print('run make_dirs first!\nwill exit!')
             exit()
         else:
             run_relax(strategy_list)
@@ -269,7 +269,7 @@ def main(param_relax, param_prop,
         try:
             strategy_list = load_v(strategy_list_path)
         except:
-            print('run make_file first!\nwill exit!')
+            print('run make_dirs first!\nwill exit!')
             exit()
         else:
             get_prop = input('please indicate property list to run: ')
@@ -285,9 +285,9 @@ def main(param_relax, param_prop,
             print('-<< finished! >>-')
 
     else:
-        print('!!wrong input argv!\n' +
+        print('!!wrong input usage!\n' +
               '!!only support:\n' +
-              '     make_file\n' +
+              '     make_dirs\n' +
               '     make_relax\n' +
               '     run_relax\n' +
               '     post_relax\n' +

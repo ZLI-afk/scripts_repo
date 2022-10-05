@@ -75,11 +75,34 @@ def run(strategies):
             os.system('sbatch job')
 
 
+def init(strategies):
+    for ii in strategies:
+        os.chdir(ii)
+        cwd = os.getcwd()
+        models = glob.glob(os.path.join(cwd, '00?'))
+        for jj in models:
+            os.chdir(jj)
+            module_name = jj.split('/')[-1]
+            input_name = f'input_{module_name}.json'
+            with open('job', 'r') as f:
+                context = f.readlines()
+                context[14] = f'dp train --init-model model.ckpt ' \
+                              f'{input_name} 1>train.log 2>train.err &&\n'
+            with open('job', 'w') as f1:
+                for line in context:
+                    f1.write(line)
+            input_param = loadfn(input_name)
+            input_param['learning_rate']['start_lr'] = 0.0001
+            with open(input_name, 'w') as f2:
+                json.dump(input_param, f2, indent=4)
+
 def main(strategies):
     if sys.argv[1] == 'make':
         make_dirs(strategies)
     elif sys.argv[1] == 'run':
         run(strategies)
+    elif sys.argv[1] == 'init':
+        init(strategies)
 
 
 if __name__ == "__main__":

@@ -18,8 +18,14 @@ sys.path.append(os.path.abspath(home_dir+'/template/python/src/util'))
 from constants import eVtoJ, kB, hP, NA
 from matplotlib.lines import Line2D
 
-CS: int = 8  #supercell size
+CS: int = 8  # supercell size
 CONF: str = 'bcc'
+
+# benchmarks path
+LATT = '/home/zhuoyli/benchmarks/Mo/lattice_finite_T/lattice'
+C11 = '/home/zhuoyli/benchmarks/Mo/elastic_finite_T/c11'
+C12 = '/home/zhuoyli/benchmarks/Mo/elastic_finite_T/c12'
+C44 = '/home/zhuoyli/benchmarks/Mo/elastic_finite_T/c44'
 
 
 class PlotFig:
@@ -41,7 +47,7 @@ class PlotFig:
     self.markers_size = [7,8,8,7,8]
 
   def plot(self, lines: np.ndarray, pic_name='my_plot',
-           step=100, xlb='xlabel', ylb='ylabel', title=None):
+           step=100, xlb='xlabel', ylb='ylabel', title=None, ref_label='DFT'):
     ax = self.ax
     for ii in range(len(lines)):
         line = lines[ii]
@@ -52,7 +58,7 @@ class PlotFig:
         y_m = Spline(x_m)
         if ii == 0:
             ax.plot(x, y, color='black', linewidth=2,
-                    zorder=1, label='DFT', alpha=0.8, marker=self.markers[ii],
+                    zorder=1, label=ref_label, alpha=0.8, marker=self.markers[ii],
                     ms=self.markers_size[ii], mec='black', mfc='white')
         else:
             ax.plot(x, y, color=self.colors[ii], linewidth=2,
@@ -101,9 +107,13 @@ def lattice(pot_paths):
             result.append(f'{temp} {lat_param_ave}\n')
             data.append([temp, lat_param_ave])
         result_out = os.path.join(result_dir, f'{pot_name}.out')
-        result_table = np.array(data)
-        result_table = result_table[np.argsort(result_table[:, 0]), :]
-        plot_lattice(data=[result_table], name=pot_name, out_path=result_dir)
+        result_table = []
+        benchmarks = np.loadtxt(LATT, dtype=float)
+        result_table.append(benchmarks)
+        table = np.array(data)
+        table = table[np.argsort(table[:, 0]), :]
+        result_table.append(table)
+        plot_lattice(data=result_table, name=pot_name, out_path=result_dir)
         with open(result_out, 'w') as f2:
             for ii in result_table:
                 txt = f'{ii[0]} {ii[1]}'
@@ -116,7 +126,7 @@ def plot_lattice(data, name, out_path):
     xlabel = 'Temperature (K)'
     ylabel = 'Lattice parameter (Å)'
     pf.plot(data, pic_name=name, step=100,
-            xlb=xlabel, ylb=ylabel, title=name)
+            xlb=xlabel, ylb=ylabel, title=name, ref_label='DFT (Y Lysogorskiy et al 2019)')
 
 def elastic(pot_paths):
     main_path = os.getcwd()
@@ -160,17 +170,26 @@ def elastic(pot_paths):
         result_out = os.path.join(result_dir, f'{pot_name}.out')
         result_table = np.array(data)
         result_table = result_table[np.argsort(result_table[:, 0]), :]
-        c11_table = result_table[:, [0, 1]]
-        c12_table = result_table[:, [0, 2]]
-        c44_table = result_table[:, [0, 3]]
+        c11_ta = result_table[:, [0, 1]]
+        c12_ta = result_table[:, [0, 2]]
+        c44_ta = result_table[:, [0, 3]]
         c11_label = 'Elastic constant C11 (GPa)'
         c12_label = 'Elastic constant C12 (GPa)'
         c44_label = 'Elastic constant C44 (GPa)'
-        plot_elastic(data=[c11_table], name=pot_name,
+        c11_table = []
+        c12_table = []
+        c44_table = []
+        c11_table.append(np.loadtxt(C11, dtype=float))
+        c12_table.append(np.loadtxt(C12, dtype=float))
+        c44_table.append(np.loadtxt(C44, dtype=float))
+        c11_table.append(c11_ta)
+        c12_table.append(c12_ta)
+        c44_table.append(c44_ta)
+        plot_elastic(data=c11_table, name=pot_name,
                      out_path=result_dir+'/c11', ylabel=c11_label)
-        plot_elastic(data=[c12_table], name=pot_name,
+        plot_elastic(data=c12_table, name=pot_name,
                      out_path=result_dir + '/c12', ylabel=c12_label)
-        plot_elastic(data=[c44_table], name=pot_name,
+        plot_elastic(data=c44_table, name=pot_name,
                      out_path=result_dir + '/c44', ylabel=c44_label)
         with open(result_out, 'w') as f2:
             for ii in result_table:
@@ -183,7 +202,7 @@ def plot_elastic(data, name, out_path, ylabel):
     pf = PlotFig()
     xlabel = 'Temperature (K)'
     pf.plot(data, pic_name=name, step=100,
-            xlb=xlabel, ylb=ylabel, title=name)
+            xlb=xlabel, ylb=ylabel, title=name, ref_label='Exp. (Dickinson, J.M., P.E., 1967)')
 
 
 def main(instruct):
