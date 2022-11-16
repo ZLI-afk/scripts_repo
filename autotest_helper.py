@@ -1,8 +1,8 @@
+import glob
 import os
 import sys
 import shutil
 import pickle
-import glob
 from multiprocessing import Pool
 
 strategy_list_str = [
@@ -152,14 +152,14 @@ def make_init_dirs(strategy_list,
         os.mkdir(ii)
         orig_strategy_abs = os.path.abspath(f'../{ii}')
         orig_strategy_list_abs.append(orig_strategy_abs)
-        orig_models = glob.glob(os.path.join(orig_strategy_abs, '00?'))
-        models = [model.split('/')[-1] for model in orig_models]
-        models.sort()
+        os.chdir(orig_strategy_abs)
+        models_name_list = glob.glob('00?')
         os.chdir(ii)
         cur_strategy = os.path.abspath(os.getcwd())
         strategy_list_abs.append(cur_strategy)
         dump_job_relax(ii)
-        for jj in models:
+
+        for jj in models_name_list:
             os.mkdir(jj)
             os.chdir(jj)
             cur_model_path = os.path.abspath(os.getcwd())
@@ -196,7 +196,6 @@ def run_dpgen(model_list, indication):
     pool.close()
     pool.join()
 
-
 def run_relax(strategy_list):
     for ii in strategy_list:
         os.chdir(ii)
@@ -212,7 +211,6 @@ def run_prop(strategy_list, structs, props):
         dump_job_prop(job_name, structs, props)
         os.system('sbatch job_prop')
 
-
 def main(param_relax, param_prop,
          poscar_bcc, poscar_fcc,
          strategy_list_path, model_list_path):
@@ -227,12 +225,9 @@ def main(param_relax, param_prop,
             else:
                 print('will exit')
                 exit()
-        get_strategy = input('test all potential listed in current direction? (y/n): ')
+        get_strategy = input('run all potential listed in current direction? (y/n): ')
         if get_strategy == 'y':
             strategy_list_str = return_all_strategy()
-        else:
-            print('will exit...')
-            exit()
         strategy_list, model_list = make_init_dirs(strategy_list_str,
                                                    param_relax, param_prop,
                                                    poscar_bcc, poscar_fcc)
@@ -247,7 +242,7 @@ def main(param_relax, param_prop,
         try:
             model_list = load_v(model_list_path)
         except:
-            print('run make_dirs first!\nwill exit!')
+            print('run make_file first!\nwill exit!')
             exit()
         else:
             run_dpgen(model_list, indication)
@@ -258,7 +253,7 @@ def main(param_relax, param_prop,
         try:
             strategy_list = load_v(strategy_list_path)
         except:
-            print('run make_dirs first!\nwill exit!')
+            print('run make_file first!\nwill exit!')
             exit()
         else:
             run_relax(strategy_list)
@@ -269,7 +264,7 @@ def main(param_relax, param_prop,
         try:
             strategy_list = load_v(strategy_list_path)
         except:
-            print('run make_dirs first!\nwill exit!')
+            print('run make_file first!\nwill exit!')
             exit()
         else:
             get_prop = input('please indicate property list to run: ')
@@ -285,7 +280,7 @@ def main(param_relax, param_prop,
             print('-<< finished! >>-')
 
     else:
-        print('!!wrong input usage!\n' +
+        print('!!wrong input argv!\n' +
               '!!only support:\n' +
               '     make_dirs\n' +
               '     make_relax\n' +
