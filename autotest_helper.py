@@ -154,6 +154,7 @@ def make_init_dirs(strategy_list,
         orig_strategy_list_abs.append(orig_strategy_abs)
         os.chdir(orig_strategy_abs)
         models_name_list = glob.glob('00?')
+        os.chdir(main_path_abs)
         os.chdir(ii)
         cur_strategy = os.path.abspath(os.getcwd())
         strategy_list_abs.append(cur_strategy)
