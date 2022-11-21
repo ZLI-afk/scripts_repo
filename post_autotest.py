@@ -141,11 +141,11 @@ def relax(strategy_list):
             os.chdir('relaxation/relax_task')
             result_json = os.path.join(os.getcwd(), 'result.json')
             r = loadfn(result_json)
-            a = '%.3f' % r['cells'][1][0][0]
+            a = '%.3f' % r['cells'][-1][0][0]
             if conf == 'std-bcc' or conf == 'std-hcp':
-                energy = '%.3f' % (r['energies'][0]/2)
+                energy = '%.3f' % (r['energies'][-1]/2)
             elif conf == 'std-fcc':
-                energy = '%.3f' % (r['energies'][0]/4)
+                energy = '%.3f' % (r['energies'][-1]/4)
             else:
                 print(f'Error! illegal input configure: {conf}...')
                 print('will exit...')
