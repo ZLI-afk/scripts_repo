@@ -5,6 +5,8 @@ import shutil
 import pickle
 from multiprocessing import Pool
 
+COMPACT_RUN = False
+
 strategy_list_str = [
     '01_2_g100_v10_c10',
     '01_2_g20_v10_c10',
@@ -88,7 +90,7 @@ def dump_job_relax(job_name) -> None:
             f.write(job_relax[ii])
 
 
-def dump_job_prop(job_name, structs, props) -> None:
+def dump_job_prop_compact(job_name, structs, props) -> None:
     job_prop = [
         '#!/usr/bin/env bash\n',
         '\n',
@@ -130,6 +132,44 @@ def dump_job_prop(job_name, structs, props) -> None:
             f.write(job_prop[ii])
 
 
+def dump_job_prop_loose(job_name, structs, props) -> None:
+    job_prop = [
+        '#!/usr/bin/env bash\n',
+        '\n',
+        f'#SBATCH --job-name="{job_name}"\n',
+        '#SBATCH --partition=gpu\n',
+        '#SBATCH --qos=gpu\n',
+        '#SBATCH --ntasks=4\n',
+        '#SBATCH --nodes=1\n',
+        '#SBATCH --gres=gpu:1\n',
+        '#SBATCH --time=3-00:00:00\n',
+        '#SBATCH --error="j%j.stderr"\n',
+        '#SBATCH --output="j%j.stdout"\n',
+        'hostname > ./hostname\n',
+        'nvidia-smi > ./nvidia-smi\n',
+        'cd confs\n',
+        f'for kk in {structs}\n',
+        'do\n',
+        '    cd $kk\n',
+        f'    for jj in {props}\n',
+        '    do\n',
+        '        cd $jj\n',
+        '        for ii in task.*\n',
+        '        do\n',
+        '            cd $ii\n',
+        '            lmp -i in.lammps -v restart 0\n',
+        '            cd ..\n',
+        '        done\n',
+        '        cd ..\n',
+        '    done\n',
+        '    cd ..\n',
+        'done'
+    ]
+    with open('job_prop', 'w') as f:
+        for ii in range(len(job_prop)):
+            f.write(job_prop[ii])
+
+
 def apply_parallel(model, cmd):
     os.chdir(model)
     print(f'working on direction: {model}')
@@ -138,7 +178,7 @@ def apply_parallel(model, cmd):
 
 def make_init_dirs(strategy_list,
                    param_relax, param_prop,
-                   poscar_bcc, poscar_fcc):
+                   poscar_bcc, poscar_fcc, poscar_hcp):
     cwd = os.getcwd()
     os.mkdir('autotests')
     main_path = os.path.join(cwd, 'autotests')
@@ -180,6 +220,10 @@ def make_init_dirs(strategy_list,
             os.mkdir('std-fcc')
             os.chdir('std-fcc')
             os.symlink(poscar_fcc, './POSCAR')
+            os.chdir(confs)
+            os.mkdir('std-hcp')
+            os.chdir('std-hcp')
+            os.symlink(poscar_hcp, './POSCAR')
             os.chdir(cur_strategy)
 
         os.chdir(main_path_abs)
@@ -207,13 +251,23 @@ def run_relax(strategy_list):
 def run_prop(strategy_list, structs, props):
     for ii in strategy_list:
         os.chdir(ii)
-        job_name = ii.split('/')[-1]
+        model_list = glob.glob(os.path.join(os.getcwd(), '00?'))
+        strategy_name = ii.split('/')[-1]
         print(f'working on direction: {ii}')
-        dump_job_prop(job_name, structs, props)
-        os.system('sbatch job_prop')
+        if COMPACT_RUN == True:
+            dump_job_prop_compact(strategy_name, structs, props)
+            os.system('sbatch job_prop')
+        else:
+            for jj in model_list:
+                os.chdir(jj)
+                model_name = strategy_name + jj.split('/')[-1]
+                print(f'working on direction: {jj}')
+                dump_job_prop_loose(model_name, structs, props)
+                os.system('sbatch job_prop')
+
 
 def main(param_relax, param_prop,
-         poscar_bcc, poscar_fcc,
+         poscar_bcc, poscar_fcc, poscar_hcp,
          strategy_list_path, model_list_path):
     if sys.argv[1] == 'make_dirs':
         print('->> start make_dirs step <<-')
@@ -231,7 +285,7 @@ def main(param_relax, param_prop,
             strategy_list_str = return_all_strategy()
         strategy_list, model_list = make_init_dirs(strategy_list_str,
                                                    param_relax, param_prop,
-                                                   poscar_bcc, poscar_fcc)
+                                                   poscar_bcc, poscar_fcc, poscar_hcp)
         save_v(strategy_list, 'strategy_list')
         save_v(model_list, 'model_list')
         print('-<< finished! >>-')
@@ -300,10 +354,11 @@ if __name__ == "__main__":
     param_prop = os.path.join(cwd, 'param_prop.json')
     poscar_bcc = os.path.join(cwd, 'POSCAR.bcc')
     poscar_fcc = os.path.join(cwd, 'POSCAR.fcc')
+    poscar_hcp = os.path.join(cwd, 'POSCAR.hcp')
     main_path = os.path.join(cwd, 'autotests')
     strategy_list_path = os.path.join(main_path, 'strategy_list')
     model_list_path = os.path.join(main_path, 'model_list')
 
     main(param_relax, param_prop,
-         poscar_bcc, poscar_fcc,
+         poscar_bcc, poscar_fcc, poscar_hcp,
          strategy_list_path, model_list_path)
