@@ -5,8 +5,6 @@ import shutil
 import pickle
 from multiprocessing import Pool
 
-COMPACT_RUN = False
-
 strategy_list_str = [
     '01_2_g100_v10_c10',
     '01_2_g20_v10_c10',
@@ -248,22 +246,27 @@ def run_relax(strategy_list):
         os.system('sbatch job_relax')
 
 
-def run_prop(strategy_list, structs, props):
+def run_prop(strategy_list, structs, props, run_mode):
     for ii in strategy_list:
         os.chdir(ii)
         model_list = glob.glob(os.path.join(os.getcwd(), '00?'))
         strategy_name = ii.split('/')[-1]
         print(f'working on direction: {ii}')
-        if COMPACT_RUN == True:
+        if run_mode == 'c':
+            print('running via compact mode...')
             dump_job_prop_compact(strategy_name, structs, props)
             os.system('sbatch job_prop')
-        else:
+        elif run_mode == 'l':
+            print('running via loose mode...')
             for jj in model_list:
                 os.chdir(jj)
                 model_name = strategy_name + jj.split('/')[-1]
                 print(f'working on direction: {jj}')
                 dump_job_prop_loose(model_name, structs, props)
                 os.system('sbatch job_prop')
+        else:
+            print('wrong input of run mode! will exit...')
+            exit()
 
 
 def main(param_relax, param_prop,
@@ -329,9 +332,11 @@ def main(param_relax, param_prop,
             else:
                 props = get_prop
             get_struct = input('please indicate configure type to run: ')
+            get_run_mode = input('running via compact mode (c) or loose mode (l)?: ')
             run_prop(strategy_list,
                      structs=get_struct,
-                     props=props)
+                     props=props,
+                     run_mode=get_run_mode)
             print('-<< finished! >>-')
 
     else:
