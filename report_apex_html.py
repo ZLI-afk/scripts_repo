@@ -3,7 +3,6 @@ import numpy as np
 from datetime import datetime
 from monty.serialization import loadfn, dumpfn
 
-
 HTML_HEAD = """
 <html>
 <head>
@@ -961,6 +960,7 @@ def prep_abc_dict(orig_dict: dict) -> dict:
     return abc_all_dict
 
 def eval_STD(orig_dict: dict):
+    THRESHOLD = 0.2
     content_dict1 = {}
 
     content = orig_dict["report"]["content"]
@@ -971,20 +971,25 @@ def eval_STD(orig_dict: dict):
             content_dict1[k] = new_dict1
             content_dict1[k]["idx"] = idx
             idx += 1
-
+    
     for item in content:
         icontent = item.get("content","")
         for k, v in icontent.items():
             if k != 'Expt' and k != 'DFT(abacus)':
                 try:
-                    if v["STD_Expt"] < 0.2:
+                    content_dict1[k]["Aver_STD_Expt/DFT"] += v["STD_Expt"]
+                    if v["STD_Expt"] < THRESHOLD:
                         content_dict1[k]["STD_Expt/DFT_pass_num"] += 1
                 except TypeError:
-                    if v["STD_DFT"] < 0.2:
+                    content_dict1[k]["Aver_STD_Expt/DFT"] += v["STD_DFT"]
+                    if v["STD_DFT"] < THRESHOLD:
                         content_dict1[k]["STD_Expt/DFT_pass_num"] += 1
-
-                if v["STD_DFT"] < 0.2:
+                content_dict1[k]["Aver_STD_DFT"] += v["STD_DFT"]
+                if v["STD_DFT"] < THRESHOLD:
                     content_dict1[k]["STD_DFT_pass_num"] += 1
+    for k, v in content_dict1.items():
+        v["Aver_STD_Expt/DFT"] = v["Aver_STD_Expt/DFT"] / len(content)
+        v["Aver_STD_DFT"] = v["Aver_STD_DFT"] / len(content)
 
     eval_STD_inf = {
         "type": "metrics",
@@ -1060,7 +1065,7 @@ def main():
     
     Report(abc_dict)
 
-METRICS_LIST1 = ["idx", "STD_Expt/DFT_pass_num", "STD_DFT_pass_num"]
+METRICS_LIST1 = ["idx", "STD_Expt/DFT_pass_num", "STD_DFT_pass_num", "Aver_STD_Expt/DFT", "Aver_STD_DFT"]
 METRICS_LIST = ["idx", "c11", "c12", "c13", "c33", "c44", "c66", "BV", "GV", "RE_BV_Expt", "RE_BV_DFT", "RE_GV_Expt", "RE_GV_DFT", "STD_Expt", "STD_DFT"]
     
 if __name__ == "__main__":
