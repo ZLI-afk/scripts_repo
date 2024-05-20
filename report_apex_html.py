@@ -3,6 +3,7 @@ import numpy as np
 from datetime import datetime
 from monty.serialization import loadfn, dumpfn
 
+
 HTML_HEAD = """
 <html>
 <head>
